@@ -1,4 +1,4 @@
-name: deploy the crm-crm-app
+name: deploy the my-crm-app
 
 on:
  push:
@@ -19,11 +19,11 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./crm-crm-app
+        working-directory: ./my-crm-app
 
       - name: Build the application
         run: npm run build
-        working-directory: ./crm-crm-app
+        working-directory: ./my-crm-app
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -36,12 +36,12 @@ jobs:
         with:
           context: ./crm-crm-app
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest
 
       - name: trivy scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+          image-ref: ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest
 
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.2.0
@@ -51,8 +51,8 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
-            docker stop crm-crm-app || true
-            docker rm crm-crm-app || true
-            docker service create --name crm-crm-app -p 8888:80 ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
-            docker service update --image ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest crm-crm-app || docker service create --name crm-crm-app -p 8888:80 ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest
+            docker stop my-crm-app || true
+            docker rm my-crm-app || true
+            docker service create --name my-crm-app -p 8888:80 ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest
+            docker service update --image ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest my-crm-app || docker service create --name my-crm-app -p 8888:80 ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest
