@@ -34,7 +34,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./my-crm-app
+          context: .
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/my-crm-app:latest
 
