@@ -1,0 +1,58 @@
+name: deploy the crm-crm-app
+
+on:
+ push:
+    branches:
+      - main
+
+jobs:
+  deploy-crm-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./crm-crm-app
+
+      - name: Build the application
+        run: npm run build
+        working-directory: ./crm-crm-app
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./crm-crm-app
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+
+      - name: trivy scan
+        uses: aquasecurity/trivy-action@v0.7.5
+        with:
+          image-ref: ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@0.1.6
+        with:
+          host: ${{ secrets.SERVER_HOST }}  
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          script: |
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+            docker stop crm-crm-app || true
+            docker rm crm-crm-app || true
+            docker service create --name crm-crm-app -p 8888:80 ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
+            docker service update --image ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest crm-crm-app || docker service create --name crm-crm-app -p 8888:80 ${{ secrets.DOCKER_HUB_USERNAME }}/crm-crm-app:latest
